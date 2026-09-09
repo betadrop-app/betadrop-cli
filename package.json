@@ -1,0 +1,58 @@
+{
+  "name": "@betadrop/cli",
+  "version": "0.3.0",
+  "description": "BetaDrop CLI — authenticate once and publish iOS/Android builds from your terminal.",
+  "type": "module",
+  "bin": {
+    "bd": "dist/bd.js",
+    "betadrop": "dist/bd.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "homepage": "https://betadrop.app",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "start": "node dist/bd.js",
+    "prepublishOnly": "npm run typecheck && npm run build"
+  },
+  "keywords": [
+    "betadrop",
+    "cli",
+    "ipa",
+    "apk",
+    "ios",
+    "android",
+    "beta",
+    "distribution"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@inquirer/prompts": "^7.2.0",
+    "chalk": "^5.4.1",
+    "cli-progress": "^3.12.0",
+    "commander": "^12.1.0",
+    "open": "^10.1.0",
+    "ora": "^8.1.1",
+    "qrcode": "^1.5.4"
+  },
+  "devDependencies": {
+    "@types/cli-progress": "^3.11.6",
+    "@types/node": "^22.10.2",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.2"
+  },
+  "bugs": {
+    "url": "https://betadrop.app/contact/",
+    "email": "support@betadrop.app"
+  }
+}
