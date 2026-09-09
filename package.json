@@ -15,6 +15,13 @@
     "access": "public"
   },
   "homepage": "https://betadrop.app",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/betadrop-app/betadrop-cli.git"
+  },
+  "bugs": {
+    "url": "https://github.com/betadrop-app/betadrop-cli/issues"
+  },
   "engines": {
     "node": ">=18"
   },
