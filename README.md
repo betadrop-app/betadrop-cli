@@ -46,7 +46,7 @@ Hand over the link, or hold up the QR code. That is the whole loop.
 | --- | --- |
 | **TestFlight external testing** | No Beta App Review between your build and a tester's phone, and no TestFlight app or invite to accept. Ad-hoc signing rules still apply — see [Troubleshooting](#troubleshooting). |
 | **Play internal testing** | No Play Console upload, no track, no tester list to keep in sync — you hand out a URL. |
-| **Diawi / similar OTA services** | Same idea, scriptable: one command, a QR code in your terminal, and channels for a link that never changes. |
+| **Diawi / similar OTA services** | Same idea, scriptable: one command, a QR code in your terminal, and a standing link that never changes. |
 | **Firebase App Distribution** | No Firebase project, no tester SDK, no invite acceptance — the link works in a plain mobile browser. |
 
 Both platforms, one command, one account.
@@ -99,25 +99,26 @@ betadrop publish ./build/MyApp.ipa
 |------|-------------|
 | `--name <name>` | Override the build name. |
 | `--notes <notes>` | Release notes for this build. |
-| `--channel <slug>` | Point a [channel](https://betadrop.app/channels/) at this build the moment it is live, so the channel's link — and any "Download from BetaDrop" button embedded with it — serves the new build with nothing to click. Pro and Studio plans; the channel must already be claimed on your account. A channel that cannot be used fails the command **before** anything is uploaded. |
-| `--ci` | Non-interactive: no spinner/progress/QR code; the install URL is the **last line of stdout**. With `--channel`, the line above it is `channel-url=<stable link>`. |
-| `--json` | Output `{ id, short_id, install_url }` as JSON (no QR code). With `--channel`, adds `channel: { id, slug, label, url }`. |
+| `--standing-link <slug>` | Point a [standing link](https://betadrop.app/standing-links/) at this build the moment it is live, so that one URL — and any "Download from BetaDrop" button embedded with it — serves the new build with nothing to click. Pro and Studio plans; the name must already be claimed on your account. A name that cannot be used fails the command **before** anything is uploaded. |
+| `--channel <slug>` | Deprecated alias for `--standing-link`, accepted permanently and hidden from `--help`. If both are given, `--standing-link` wins. |
+| `--ci` | Non-interactive: no spinner/progress/QR code; the install URL is the **last line of stdout**. With a standing link, the line above it is `channel-url=<url>` — that key is unchanged, because released GitHub Action versions parse it. |
+| `--json` | Output `{ id, short_id, install_url }` as JSON (no QR code). With a standing link, adds `channel: { id, slug, label, url }` — the key keeps its old name so existing parsers keep working. |
 
-> If the build uploads but the channel could not be pointed at it (it was released mid-publish,
+> If the build uploads but the standing link could not be moved (it was released mid-publish,
 > say), the install URL is still printed, a `warning:` goes to stderr, and the command exits
-> non-zero — a pipeline that asked for a channel must not go green when the channel did not move.
+> non-zero — a pipeline that asked for one must not go green when it did not move.
 
 ### One link that never changes
 
-Every publish mints a new install link, which means re-sending it to everyone. A **channel** is a
-fixed link that always serves the latest build you published to it:
+Every publish mints a new install link, which means re-sending it to everyone. A **standing link**
+is a fixed URL you re-point at each new build:
 
 ```bash
-betadrop publish ./build/MyApp.ipa --channel nightly
+betadrop publish ./build/MyApp.ipa --standing-link acmebeta
 ```
 
-Send the channel link once. Every later publish swaps what it installs, and nobody has to be told
-again. Channels are a Pro and Studio feature — claim the slug in the dashboard first.
+Send it once. Every later publish swaps what it installs, and nobody has to be told again.
+Standing links are a Pro and Studio feature — claim the name in the dashboard first.
 
 ### Put a download button on your README
 
@@ -125,12 +126,12 @@ Every build's install link can be wrapped in a "Download from BetaDrop" button �
 Markdown image link, no script:
 
 ```markdown
-[![Download MyApp from BetaDrop](https://betadrop.app/badge/download-dark.svg)](https://betadrop.app/install/nightly?ref=badge)
+[![Download MyApp from BetaDrop](https://betadrop.app/badge/download-dark.svg)](https://betadrop.app/install/acmebeta?ref=badge)
 ```
 
 Copy it from the embed panel under the install link (post-upload screen or the build's
-Share tab). Point it at a channel and `betadrop publish --channel nightly` keeps the
-button current on every publish. Details: <https://betadrop.app/download-button/>.
+Share tab). Point it at a standing link and `betadrop publish --standing-link acmebeta`
+keeps the button current on every publish. Details: <https://betadrop.app/download-button/>.
 
 ### Already logged in?
 
@@ -165,13 +166,13 @@ Set these environment variables to override the defaults:
 BETADROP_TOKEN=bd_live_xxxxxxxxxxxxxxxxxxxx betadrop publish ./build/MyApp.ipa --ci
 ```
 
-To keep one link current across every CI publish, claim a channel once in the dashboard and
+To keep one link current across every CI publish, claim a standing link once in the dashboard and
 pass it each time:
 
 ```bash
-BETADROP_TOKEN=bd_live_xxxxxxxxxxxxxxxxxxxx betadrop publish ./build/MyApp.ipa --ci --channel nightly
+BETADROP_TOKEN=bd_live_xxxxxxxxxxxxxxxxxxxx betadrop publish ./build/MyApp.ipa --ci --standing-link acmebeta
 # stdout:
-#   channel-url=https://betadrop.app/install/?i=nightly
+#   channel-url=https://betadrop.app/install/?i=acmebeta
 #   https://betadrop.app/install/?i=Ab3xYz
 ```
 

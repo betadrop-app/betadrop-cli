@@ -1,5 +1,5 @@
 import dns from "node:dns";
-import { Command } from "commander";
+import { Command, Option } from "commander";
 import path from "node:path";
 
 // Node 17+ prefers IPv6 by default; force IPv4 to avoid broken IPv6 routes
@@ -82,9 +82,14 @@ export function buildProgram(): Command {
     .option("--name <name>", "override the build name")
     .option("--notes <notes>", "release notes for this build")
     .option(
-      "--channel <slug>",
-      "point a channel at this build once it is live, so its stable link follows every publish (Pro)",
+      "--standing-link <slug>",
+      "point a standing link at this build once it is live, so one URL follows every publish (Pro)",
     )
+    // `--channel` is what this flag was called before 2026-09-11 and is accepted forever.
+    // Hidden from --help so there is one documented spelling, never removed so that no pinned
+    // workflow ever breaks: the whole pitch of the feature is that a link does not change under
+    // you, and breaking the flag that manages it would be a poor way to make that argument.
+    .addOption(new Option("--channel <slug>", "deprecated alias for --standing-link").hideHelp())
     .option("--ci", "non-interactive mode for CI (no spinners/prompts)")
     .option("--json", "output as JSON")
     .action(action(publishCommand));

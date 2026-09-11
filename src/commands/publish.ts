@@ -11,18 +11,25 @@ import type { PublishResponse } from "../types.js";
 interface PublishOptions {
   name?: string;
   notes?: string;
+  /** `--standing-link`. The API field is still `channel`; only the user-facing name changed. */
+  standingLink?: string;
+  /** `--channel`, the pre-2026-09-11 spelling. Permanently accepted, hidden from --help. */
   channel?: string;
   ci?: boolean;
   json?: boolean;
 }
 
 /**
- * The line `--ci` prints when a channel was used, one line ABOVE the install URL.
+ * The line `--ci` prints when a standing link was used, one line ABOVE the install URL.
  *
  * The install URL stays the last line of stdout — that is the contract the GitHub Action reads
- * with `tail -n 1`, and it cannot change without breaking every pinned workflow. The channel's
- * stable link therefore travels as a `key=value` line the Action greps for, in the same shape
+ * with `tail -n 1`, and it cannot change without breaking every pinned workflow. The standing
+ * link therefore travels as a `key=value` line the Action greps for, in the same shape
  * `$GITHUB_OUTPUT` uses, so the Action can forward it without parsing prose.
+ *
+ * The KEY stays `channel-url=` even though the feature is now called a standing link. It is a
+ * machine contract read by released Action versions, not copy — renaming it would break exactly
+ * the pinned workflows the comment above promises not to break.
  */
 export const CI_CHANNEL_LINE = "channel-url=";
 
@@ -121,7 +128,8 @@ export async function publishCommand(
       fields: {
         name: options.name,
         notes: options.notes,
-        channel: options.channel?.trim() || undefined,
+        // Either spelling resolves to the API's `channel` field; --standing-link wins.
+        channel: (options.standingLink ?? options.channel)?.trim() || undefined,
       },
       onProgress: (sent, total) => {
         if (bar) bar.update(+(sent / 1024 / 1024).toFixed(1), { total });
@@ -148,12 +156,12 @@ export async function publishCommand(
   // artifact and, until now, silently produced a second link to it.
   const dupe = result.duplicateOf;
 
-  // Set when `--channel` was given and the API pointed that channel at this build. Its `url` is
+  // Set when a standing link was requested and the API pointed it at this build. Its `url` is
   // the link that survives the next publish, which for a pipeline is the one worth printing.
   const channel = result.channel ?? null;
 
-  // Set when `--channel` was given, the build was stored, and the channel did NOT move. This is
-  // the one advisory here that must not be treated as advice: a pipeline that asked for a channel
+  // Set when a standing link was requested, the build was stored, and the link did NOT move.
+  // The one advisory here that must not be treated as advice: a pipeline that asked for one
   // and got a build nobody's link points at has failed at the thing it was for. So it is printed
   // like the others AND the command exits non-zero — after the install URL, which is still real.
   const channelWarning = result.channelWarning ?? null;
@@ -171,7 +179,7 @@ export async function publishCommand(
           // Emitted only when it fired, so a script can test for presence rather than
           // comparing day counts itself. Mirrors the API's own contract.
           ...(clamp ? { retention_clamp: clamp } : {}),
-          // Present only when `--channel` was given and the channel now serves this build.
+          // Present only when a standing link was requested and now serves this build.
           ...(channel
             ? { channel: { id: channel.id, slug: channel.slug, label: channel.label, url: channel.url } }
             : {}),
@@ -209,7 +217,7 @@ export async function publishCommand(
     // of stdout because the GitHub Action reads it with `tail -n 1`. A notice printed to stdout
     // here would silently become the "install URL" every Action run publishes.
     if (dupe) console.error(`warning: ${dupe.message} (${dupe.url})`);
-    // The channel warning is not echoed here: `failIfChannelDidNotMove` below throws it, and the
+    // The standing-link warning is not echoed here: `failIfChannelDidNotMove` below throws it, and the
     // error path prints it to stderr once, after the install URL has gone to stdout.
     // Above the install URL, never below it — see CI_CHANNEL_LINE.
     if (channel) console.log(`${CI_CHANNEL_LINE}${channel.url}`);
@@ -231,11 +239,11 @@ export async function publishCommand(
   );
   ui.installLink(installUrl);
   console.log("");
-  // The channel's link, directly under the build's own: this is the one to hand out, because
-  // the next `--channel` publish updates it in place. Named by slug so it reads as a fact about
-  // the channel rather than a second copy of the install link.
+  // The standing link, directly under the build's own: this is the one to hand out, because the
+  // next publish to it updates it in place. Named by slug so it reads as a fact about the
+  // standing link rather than a second copy of the install link.
   if (channel) {
-    ui.dim(`  Channel ${channel.slug} now serves this build:`);
+    ui.dim(`  Standing link ${channel.slug} now serves this build:`);
     console.log(`  ${chalk.bold(channel.url)}`);
     console.log("");
   }
@@ -260,8 +268,8 @@ export async function publishCommand(
   }
   // Awaited: unawaited, this printed its caption synchronously and the code
   // itself a tick later, so the blank line below landed between the two.
-  // The QR carries the channel link when there is one: a phone that scans it once keeps a link
-  // that follows every later publish, which is what a channel is for.
+  // The QR carries the standing link when there is one: a phone that scans it once keeps a URL
+  // that follows every later publish, which is the whole point of having one.
   await ui.qr(channel ? channel.url : installUrl);
   console.log("");
   failIfChannelDidNotMove();
