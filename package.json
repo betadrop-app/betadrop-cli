@@ -19,9 +19,6 @@
     "type": "git",
     "url": "git+https://github.com/betadrop-app/betadrop-cli.git"
   },
-  "bugs": {
-    "url": "https://github.com/betadrop-app/betadrop-cli/issues"
-  },
   "engines": {
     "node": ">=18"
   },
@@ -40,7 +37,15 @@
     "ios",
     "android",
     "beta",
-    "distribution"
+    "beta-testing",
+    "distribution",
+    "app-distribution",
+    "ota",
+    "over-the-air",
+    "install-link",
+    "testflight-alternative",
+    "mobile-ci",
+    "fastlane"
   ],
   "license": "MIT",
   "dependencies": {
@@ -59,7 +64,7 @@
     "typescript": "^5.7.2"
   },
   "bugs": {
-    "url": "https://betadrop.app/contact/",
+    "url": "https://github.com/betadrop-app/betadrop-cli/issues",
     "email": "support@betadrop.app"
   }
 }

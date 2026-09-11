@@ -14,12 +14,42 @@
 [![Node](https://img.shields.io/node/v/@betadrop/cli?color=0b64fc)](https://nodejs.org)
 [![License: MIT](https://img.shields.io/npm/l/@betadrop/cli?color=0b64fc)](https://opensource.org/licenses/MIT)
 
-Publish iOS/Android beta builds (IPA/APK) to [BetaDrop](https://betadrop.app) from your
-terminal or CI pipeline — authenticate once, then `betadrop publish app.ipa` (or `bd publish app.ipa`).
+**Ship a build to a tester in one command.** `betadrop publish app.ipa` uploads an iOS `.ipa` or
+Android `.apk` to [BetaDrop](https://betadrop.app) and prints an over-the-air install link plus a
+scannable QR code — no TestFlight review wait, no Play track, no tester accounts. Your tester opens
+the link on their phone and installs from the browser.
 
 ```bash
 npm install -g @betadrop/cli
+betadrop login
+betadrop publish ./build/MyApp.ipa
 ```
+
+```
+Uploading MyApp.ipa…
+  ████████████████████ 100% · 24.3/24.3 MB
+
+✓ Published to BetaDrop
+
+  MyApp  v1.2.0 (ios)
+  Install link  https://betadrop.app/install/?i=abc123
+
+  Scan with your phone:
+  [compact QR code printed here]
+```
+
+Hand over the link, or hold up the QR code. That is the whole loop.
+
+## When this is the right tool
+
+| Instead of | What changes |
+| --- | --- |
+| **TestFlight external testing** | No Beta App Review between your build and a tester's phone, and no TestFlight app or invite to accept. Ad-hoc signing rules still apply — see [Troubleshooting](#troubleshooting). |
+| **Play internal testing** | No Play Console upload, no track, no tester list to keep in sync — you hand out a URL. |
+| **Diawi / similar OTA services** | Same idea, scriptable: one command, a QR code in your terminal, and channels for a link that never changes. |
+| **Firebase App Distribution** | No Firebase project, no tester SDK, no invite acceptance — the link works in a plain mobile browser. |
+
+Both platforms, one command, one account.
 
 ---
 
@@ -45,21 +75,6 @@ betadrop login --token bd_live_xxxxxxxxxxxxxxxxxxxx
 
 # 3. Publish — the install link and QR code print instantly
 betadrop publish ./build/MyApp.ipa
-```
-
-Expected output after `betadrop publish`:
-
-```
-Uploading MyApp.ipa…
-  ████████████████████ 100% · 24.3/24.3 MB
-
-✓ Published to BetaDrop
-
-  MyApp  v1.2.0 (ios)
-  Install link  https://betadrop.app/install/?i=abc123
-
-  Scan with your phone:
-  [compact QR code printed here]
 ```
 
 > The install link and a scannable QR code are printed in the terminal after every
@@ -91,6 +106,18 @@ Uploading MyApp.ipa…
 > If the build uploads but the channel could not be pointed at it (it was released mid-publish,
 > say), the install URL is still printed, a `warning:` goes to stderr, and the command exits
 > non-zero — a pipeline that asked for a channel must not go green when the channel did not move.
+
+### One link that never changes
+
+Every publish mints a new install link, which means re-sending it to everyone. A **channel** is a
+fixed link that always serves the latest build you published to it:
+
+```bash
+betadrop publish ./build/MyApp.ipa --channel nightly
+```
+
+Send the channel link once. Every later publish swaps what it installs, and nobody has to be told
+again. Channels are a Pro and Studio feature — claim the slug in the dashboard first.
 
 ### Put a download button on your README
 
@@ -153,6 +180,10 @@ BETADROP_TOKEN=bd_live_xxxxxxxxxxxxxxxxxxxx betadrop publish ./build/MyApp.ipa -
 > in the dashboard. Rotate CI tokens at
 > betadrop.app → Settings → Developer → API tokens.
 
+On GitHub Actions, skip the install step entirely and use
+[`betadrop-app/upload-action`](https://github.com/betadrop-app/upload-action) — it wraps this
+same CLI and puts the link on the run summary and the pull request.
+
 ---
 
 ## Troubleshooting
@@ -173,7 +204,30 @@ Your connection dropped mid-upload. The CLI will retry automatically on server e
 **QR code looks garbled**  
 Use a modern terminal that renders Unicode block characters: iTerm2, Windows Terminal, Alacritty, or Ghostty. If your terminal can't render them, use the printed URL directly — they carry the same link.
 
+**The iOS build downloads on the phone but will not open**  
+An ad-hoc `.ipa` only installs on devices that were in the provisioning profile when it was
+signed — publishing it does not change that. Send the tester the
+[UDID checker](https://betadrop.app/udid-checker/), which reads the UDID off the iPhone itself
+(no Mac, no cable), then add the device in the Apple Developer portal and re-sign.
+
 ---
+
+## Also from BetaDrop
+
+The same publish step, on the other two surfaces — one account, one set of API tokens:
+
+| | |
+|---|---|
+| **[`betadrop-app/upload-action`](https://github.com/betadrop-app/upload-action)** | Publish from a GitHub Actions workflow. The install link lands on the run summary and, optionally, in a pull-request comment that updates itself on every push. |
+| **[`@betadrop/mcp`](https://www.npmjs.com/package/@betadrop/mcp)**<br><sub>[source](https://github.com/betadrop-app/betadrop-mcp)</sub> | MCP server — publish builds, list history and manage tokens by asking Claude, Cursor or Copilot, without leaving the editor. |
+
+---
+
+## Requirements
+
+- **Node.js 18+**
+- A [BetaDrop](https://betadrop.app) account — the free tier needs no card. Retention and
+  file-size ceilings by plan are on the [pricing page](https://betadrop.app/pricing/).
 
 ## Development
 
@@ -183,3 +237,10 @@ npm run build      # bundle to dist/bd.js
 npm run typecheck  # type-check without emitting
 node dist/bd.js --help
 ```
+
+Issues and pull requests: <https://github.com/betadrop-app/betadrop-cli>. If this saved you a
+TestFlight round-trip, a ⭐ helps other mobile teams find it.
+
+## License
+
+MIT
